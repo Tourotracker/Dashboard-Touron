@@ -243,7 +243,7 @@ def actualizar(html, d):
     h.sub(r'Media diaria \w+</div><div class="kpi-val g" style="font-size:2.6rem">[\d.]+</div></div><div><div class="kpi-sub">vs \w+ [\d.]+</div><div class="delta [^"]*">[^<]*</div>',
           f'Media diaria {MES_L[F.month-1]}</div><div class="kpi-val g" style="font-size:2.6rem">{miles(m_cur)}</div></div>'
           f'<div><div class="kpi-sub">vs {MES_L[pm-1]} {miles(m_prev)}</div>{vtxt}')
-    h.sub(r'Total líneas \w+</div><div class="kpi-val c" style="font-size:2.6rem">[\d.]+</div></div><div><div class="kpi-sub">\d+ días activos \(S\d+\)',
+    h.sub(r'Total líneas \w+</div><div class="kpi-val c" style="font-size:2.6rem">[\d.]+</div></div><div><div class="kpi-sub">\d+ días? activos? \(S\d+\)',
           f'Total líneas {MES_L[F.month-1]}</div><div class="kpi-val c" style="font-size:2.6rem">{miles(sum(x[1] for x in cur))}</div></div>'
           f'<div><div class="kpi-sub">{len(cur)} {"día activo" if len(cur)==1 else "días activos"} (S{ult})')
 
