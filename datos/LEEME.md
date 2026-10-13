@@ -20,6 +20,9 @@ Se abre directamente con Excel (separador `;`, UTF-8).
 | Z5_EMB_TAREAS, Z5_EMB_LINEAS | Parte de EMBARCACIONES de la zona 5 (el resto de líneas son productos de gran tamaño) |
 | SEUR_ESP … DHL_POR | Bultos expedidos por agencia y país (desde octubre de 2026) |
 | FUENTE | Excel original o correo LIBRA |
-| NOTA | Correcciones (5 fechas mal tecleadas en el Excel se corrigieron según su semana y día) |
+| NOTA | Correcciones (5 fechas mal tecleadas en el Excel se corrigieron según su semana y día; días del Excel corregidos con el correo LIBRA) |
 
 Origen hasta el 09/10/2026: Excel *Seguimiento_tareas_y_expediciones_v1.xlsx*, hoja "Datos LIBRA".
+
+Si llega un correo de LIBRA de un día que ya estaba cargado desde el Excel, **manda el correo**: se sobrescriben
+totales, zonas y expediciones y se deja constancia en NOTA de los valores que tenía el Excel.

@@ -7,7 +7,8 @@ Uso:
     python3 bot/actualizar_dashboard.py <correo.txt> [--html index.html] [--dry-run]
 
 <correo.txt> es el cuerpo en texto plano del correo (vale el reenviado).
-Códigos de salida: 0 = actualizado, 3 = ese día ya estaba cargado, 1/2 = error.
+Códigos de salida: 0 = actualizado (OK, CORREGIDO o SOLO_ARCHIVO), 3 = ese día ya estaba cargado, 1/2 = error.
+Si el día ya estaba cargado desde el Excel con otros valores, manda el correo de LIBRA (CORREGIDO).
 
 Además, cada día se guarda en el archivo maestro datos/historico_libra.csv (todo el
 histórico desde 2019, con zonas y expediciones desde octubre de 2026).
@@ -92,22 +93,31 @@ def actualizar(html, d):
     estado = json.loads(m.group(2))
     hist = estado['historico']  # [["aaaa-mm-dd", lineas, tareas, cd], ...]
     F = d['fecha']
-    if any(x[0] == F.isoformat() for x in hist):
+    nuevo = [F.isoformat(), d['lineas'], d['tareas'], d['cd']]
+    previo = next((x for x in hist if x[0] == F.isoformat()), None)
+    if previo == nuevo:
         return None
-    if hist and F.isoformat() < hist[-1][0]:
+    if previo is not None:
+        # El correo de LIBRA tiene prioridad sobre el Excel: se corrige el día ya cargado.
+        hist[hist.index(previo)] = nuevo
+    elif hist and F.isoformat() < hist[-1][0]:
         raise RuntimeError(f'La fecha {F} es anterior al último día cargado ({hist[-1][0]})')
-    hist.append([F.isoformat(), d['lineas'], d['tareas'], d['cd']])
-    estado['ultimo'] = {
-        'fecha': F.isoformat(),
-        'zonas': {str(k): list(v) for k, v in sorted(d['zonas'].items())},
-        'embarcaciones': list(d['emb']),
-        'expediciones': {k: list(v) for k, v in d['exp'].items()},
-    }
+    else:
+        hist.append(nuevo)
+    if F.isoformat() == hist[-1][0]:
+        estado['ultimo'] = {
+            'fecha': F.isoformat(),
+            'zonas': {str(k): list(v) for k, v in sorted(d['zonas'].items())},
+            'embarcaciones': list(d['emb']),
+            'expediciones': {k: list(v) for k, v in d['exp'].items()},
+        }
     js = json.dumps(estado, ensure_ascii=False, separators=(',', ':'))
     new = html[:m.start()] + m.group(1) + js + m.group(3) + html[m.end():]
     se, sp = d['exp']['SEUR']; de, dp = d['exp']['DHL']
     resumen = dict(fecha=F.strftime('%d/%m/%Y'), lineas=d['lineas'], tareas=d['tareas'], cd=d['cd'],
                    bultos=se + sp + de + dp, dias_en_historico=len(hist))
+    if previo is not None:
+        resumen['corregido_antes'] = dict(lineas=previo[1], tareas=previo[2], cd=previo[3])
     return new, resumen
 
 
@@ -126,7 +136,8 @@ def inicio_temporada(y):
 
 
 def archivar(csv_path, d):
-    """Añade (o completa) el día en el CSV maestro. Devuelve 'añadido', 'completado' o None si ya estaba."""
+    """Añade, completa o corrige el día en el CSV maestro (el correo de LIBRA tiene prioridad
+    sobre el Excel). Devuelve 'añadido', 'completado', 'corregido' o None si ya estaba."""
     import csv, os
     F = d['fecha']
     rows = []
@@ -147,13 +158,20 @@ def archivar(csv_path, d):
     accion = 'añadido'
     for r in rows:
         if r['FECHA'] == nueva['FECHA']:
-            if r.get('Z1_LINEAS'):
-                return None
-            for c in COLS:                      # completar la fila existente (zonas/expediciones)
-                if not r.get(c) and nueva[c] != '':
+            if 'correo' in (r.get('FUENTE') or '').lower() and r.get('Z1_LINEAS'):
+                return None                     # ya venía del correo de LIBRA
+            # El correo de LIBRA tiene prioridad sobre el Excel: se sobrescriben sus datos
+            # (se conservan LINEAS_ARMARIOS y NOTA, que solo existen en el Excel).
+            antes = (r.get('TAREAS'), r.get('LINEAS'), r.get('LINEAS_CD'))
+            for c in COLS:
+                if c not in ('LINEAS_ARMARIOS', 'NOTA', 'FUENTE') and nueva[c] != '':
                     r[c] = nueva[c]
             r['FUENTE'] = (r.get('FUENTE') or '') + ' + correo LIBRA'
             accion = 'completado'
+            if antes != (str(d['tareas']), str(d['lineas']), str(d['cd'])):
+                nota = f'Corregido con correo LIBRA (Excel: {antes[0]} tareas / {antes[1]} líneas / {antes[2]} C.D.)'
+                r['NOTA'] = f"{r['NOTA']} | {nota}" if r.get('NOTA') else nota
+                accion = 'corregido'
             break
     else:
         rows.append(nueva)
@@ -187,7 +205,7 @@ def main():
     if not a.dry_run:
         open(a.html, 'w', encoding='utf-8').write(new)
     resumen['archivo'] = arch or 'ya estaba'
-    print('OK ' + json.dumps(resumen, ensure_ascii=False))
+    print(('CORREGIDO ' if 'corregido_antes' in resumen else 'OK ') + json.dumps(resumen, ensure_ascii=False))
 
 
 if __name__ == '__main__':
