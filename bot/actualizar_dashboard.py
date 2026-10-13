@@ -19,6 +19,7 @@ la temporada (octubre-septiembre), comparativas con el año anterior, medias y g
 """
 import argparse, datetime as dt, json, math, re, sys
 
+ZONAS = (1, 2, 3, 4, 5, 7)
 DIA_C = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 DIA_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 MES_C = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
@@ -60,14 +61,23 @@ def parse_correo(txt):
         zonas[int(m.group(1))] = (num(m.group(2)), num(m.group(3)))  # (tareas, líneas)
     if not zonas:
         raise ValueError('No encuentro filas de zonas')
+    # La zona 5 tiene dos partes: "5 EMBARCACIONES" y "5 ZONA DE TRABAJO 5" (productos de gran
+    # tamaño). Sus líneas se suman en la zona 5, como hace el TOTAL de LIBRA; las tareas de la
+    # zona 5 se cuentan una sola vez, porque así cuadra el TOTAL de tareas de LIBRA.
+    emb = (0, 0)
+    m = re.search(r'^\s*5\s+EMBARCACIONES\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M)
+    if m:
+        emb = (num(m.group(1)), num(m.group(2)))
+        t5, l5 = zonas.get(5, (0, 0))
+        zonas[5] = (max(t5, emb[0]), l5 + emb[1])
     if sum(z[1] for z in zonas.values()) != tot_l or sum(z[0] for z in zonas.values()) != tot_t:
         raise ValueError(f'La suma de zonas no cuadra con el TOTAL ({tot_t} tareas / {tot_l} líneas): {zonas}')
-    extra = set(zonas) - {1, 2, 3, 4, 7}
+    extra = set(zonas) - set(ZONAS)
     if extra:
-        raise ValueError(f'Aparecen zonas nuevas {sorted(extra)}: el dashboard solo tiene 1,2,3,4 y 7')
-    for z in (1, 2, 3, 4, 7):
+        raise ValueError(f'Aparecen zonas nuevas {sorted(extra)}: el dashboard solo tiene {ZONAS}')
+    for z in ZONAS:
         zonas.setdefault(z, (0, 0))
-    return dict(fecha=fecha, tareas=tot_t, lineas=tot_l, cd=zonas[7][1], zonas=zonas, exp=exp)
+    return dict(fecha=fecha, tareas=tot_t, lineas=tot_l, cd=zonas[7][1], zonas=zonas, emb=emb, exp=exp)
 
 
 # ───────────────────────────── actualización ───────────────────────────────
@@ -90,6 +100,7 @@ def actualizar(html, d):
     estado['ultimo'] = {
         'fecha': F.isoformat(),
         'zonas': {str(k): list(v) for k, v in sorted(d['zonas'].items())},
+        'embarcaciones': list(d['emb']),
         'expediciones': {k: list(v) for k, v in d['exp'].items()},
     }
     js = json.dumps(estado, ensure_ascii=False, separators=(',', ':'))
@@ -103,7 +114,7 @@ def actualizar(html, d):
 # ───────────────────────────── archivo maestro CSV ──────────────────────────
 COLS = ['TEMPORADA', 'SEMANA', 'DIA', 'FECHA', 'TAREAS', 'LINEAS', 'LINEAS_ARMARIOS', 'LINEAS_CD',
         'Z1_TAREAS', 'Z1_LINEAS', 'Z2_TAREAS', 'Z2_LINEAS', 'Z3_TAREAS', 'Z3_LINEAS', 'Z4_TAREAS', 'Z4_LINEAS',
-        'Z7_TAREAS', 'Z7_LINEAS', 'SEUR_ESP', 'SEUR_POR', 'DHL_ESP', 'DHL_POR', 'FUENTE', 'NOTA']
+        'Z5_TAREAS', 'Z5_LINEAS', 'Z5_EMB_TAREAS', 'Z5_EMB_LINEAS', 'Z7_TAREAS', 'Z7_LINEAS', 'SEUR_ESP', 'SEUR_POR', 'DHL_ESP', 'DHL_POR', 'FUENTE', 'NOTA']
 DIA_LIBRA = ['1L', '2M', '3X', '4J', '5V', '6S', '7D']
 
 
@@ -130,8 +141,9 @@ def archivar(csv_path, d):
                  TAREAS=d['tareas'], LINEAS=d['lineas'], LINEAS_CD=d['cd'],
                  SEUR_ESP=e['SEUR'][0], SEUR_POR=e['SEUR'][1], DHL_ESP=e['DHL'][0], DHL_POR=e['DHL'][1],
                  FUENTE='Correo LIBRA')
-    for k in (1, 2, 3, 4, 7):
+    for k in ZONAS:
         nueva[f'Z{k}_TAREAS'], nueva[f'Z{k}_LINEAS'] = z[k]
+    nueva['Z5_EMB_TAREAS'], nueva['Z5_EMB_LINEAS'] = d['emb']
     accion = 'añadido'
     for r in rows:
         if r['FECHA'] == nueva['FECHA']:

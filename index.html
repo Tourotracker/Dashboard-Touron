@@ -394,17 +394,17 @@ $('lgMedPer',fmt(ceilAvg(diarioChart,x=>x.l))); $('lgMedAnoLbl',`Media año ${T.
 
 // ── PANTALLA 3 ──
 const ULT=EST.ultimo, UF=pd(ULT.fecha), Z=ULT.zonas;
-const zL=k=>(Z[k]||[0,0])[1], zT=k=>(Z[k]||[0,0])[0];
-const uL=sum(['1','2','3','4','7'],zL), uT=sum(['1','2','3','4','7'],zT), uC=zL('7');
+const zL=k=>(Z[k]||[0,0])[1], zT=k=>(Z[k]||[0,0])[0], ZK=['1','2','3','4','5','7'], EMB=ULT.embarcaciones||null;
+const uL=sum(ZK,zL), uT=sum(ZK,zT), uC=zL('7');
 $('s3Name',`Desglose por Zonas · ${cap(DIA_L[UF.getUTCDay()])} ${UF.getUTCDate()} ${MES_L[UF.getUTCMonth()]} ${UF.getUTCFullYear()}`);
 $('s3L',fmt(uL)); $('s3T',fmt(uT)); $('s3C',fmt(uC));
 $('ztTitle',`Líneas y tareas por zona · ${ddmmyyyy(UF)}`); $('ztBadge',`${fmt(uL)} líneas totales`);
-{const maxz=Math.max(...['1','2','3','4','7'].map(zL))||1;
+{const maxz=Math.max(...ZK.map(zL))||1;
  const row=(k,name,cd)=>{const l=zL(k),t=zT(k),w=Math.round(l/maxz*100);
    const ratio=t?dec(l/t):'–', pct=uL?dec(l/uL*100,1)+'%':'–';
    return cd?`<tr><td style="color:var(--cyan);font-weight:700">${name}</td><td class="bv" style="color:var(--cyan)">${l}</td><td class="r">${t}</td><td class="r">${ratio}</td><td class="r" style="font-weight:800;color:var(--cyan)">${pct}</td><td><span class="zbar" style="width:${w}px;background:var(--cyan)"></span></td></tr>`
             :`<tr><td>${name}</td><td class="bv">${l}</td><td class="r">${t}</td><td class="r">${ratio}</td><td class="r">${pct}</td><td><span class="zbar" style="width:${w}px;background:var(--blue)"></span></td></tr>`;};
- document.getElementById('ztBody').innerHTML=row('1','Zona 1')+row('2','Zona 2')+row('3','Zona 3')+row('4','Zona 4')+row('7','Z7 · C.D.',true);
+ document.getElementById('ztBody').innerHTML=row('1','Zona 1')+row('2','Zona 2')+row('3','Zona 3')+row('4','Zona 4')+row('5',EMB&&EMB[1]?`Zona 5 <span style="font-size:11px;color:var(--ink3)">(embarc. ${EMB[1]} · gran tamaño ${zL('5')-EMB[1]} lín.)</span>`:'Zona 5')+row('7','Z7 · C.D.',true);
  document.getElementById('ztFoot').innerHTML=`<td>Total día</td><td>${fmt(uL)}</td><td>${fmt(uT)}</td><td>${uT?dec(uL/uT):'–'}</td><td>100%</td><td></td>`;}
 {const y=U.d.getUTCFullYear(),m=U.d.getUTCMonth();const pm=new Date(Date.UTC(y,m-1,1));
  const cur=H.filter(x=>x.d.getUTCFullYear()===y&&x.d.getUTCMonth()===m);
@@ -593,13 +593,13 @@ new Chart(document.getElementById('cDiaSem'),{
 new Chart(document.getElementById('cZonas'),{
   type:'bar',
   data:{
-    labels:['Zona 1','Zona 2','Zona 3','Zona 4','Z7 C.D.'],
+    labels:['Zona 1','Zona 2','Zona 3','Zona 4','Zona 5','Z7 C.D.'],
     datasets:[
-      {label:'Líneas',data:['1','2','3','4','7'].map(zL),
-       backgroundColor:['#2b7de9','#2b7de9','#2b7de9','#2b7de9','#0ab4c3'],
+      {label:'Líneas',data:ZK.map(zL),
+       backgroundColor:['#2b7de9','#2b7de9','#2b7de9','#2b7de9','#2b7de9','#0ab4c3'],
        borderRadius:6,barPercentage:0.5},
-      {label:'Tareas',data:['1','2','3','4','7'].map(zT),
-       backgroundColor:['rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(10,180,195,.25)'],
+      {label:'Tareas',data:ZK.map(zT),
+       backgroundColor:['rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(43,125,233,.25)','rgba(10,180,195,.25)'],
        borderRadius:6,barPercentage:0.5}
     ]
   },
