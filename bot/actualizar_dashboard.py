@@ -9,6 +9,9 @@ Uso:
 <correo.txt> es el cuerpo en texto plano del correo (vale el reenviado).
 Códigos de salida: 0 = actualizado, 3 = ese día ya estaba cargado, 1/2 = error.
 
+Además, cada día se guarda en el archivo maestro datos/historico_libra.csv (todo el
+histórico desde 2019, con zonas y expediciones desde octubre de 2026).
+
 El histórico diario completo (desde el 29/09/2025) vive dentro del propio HTML en
 <script type="application/json" id="estado-bot">. Este script solo añade el día nuevo
 (y las zonas/expediciones del último día); la página calcula al cargarse todos los KPIs,
@@ -97,21 +100,81 @@ def actualizar(html, d):
     return new, resumen
 
 
+# ───────────────────────────── archivo maestro CSV ──────────────────────────
+COLS = ['TEMPORADA', 'SEMANA', 'DIA', 'FECHA', 'TAREAS', 'LINEAS', 'LINEAS_ARMARIOS', 'LINEAS_CD',
+        'Z1_TAREAS', 'Z1_LINEAS', 'Z2_TAREAS', 'Z2_LINEAS', 'Z3_TAREAS', 'Z3_LINEAS', 'Z4_TAREAS', 'Z4_LINEAS',
+        'Z7_TAREAS', 'Z7_LINEAS', 'SEUR_ESP', 'SEUR_POR', 'DHL_ESP', 'DHL_POR', 'FUENTE', 'NOTA']
+DIA_LIBRA = ['1L', '2M', '3X', '4J', '5V', '6S', '7D']
+
+
+def inicio_temporada(y):
+    """Lunes de la semana del 1 de octubre (o el lunes siguiente si el 1/10 cae en fin de semana)."""
+    o = dt.date(y, 10, 1)
+    wd = o.weekday()
+    return o + dt.timedelta(days=(7 - wd) if wd >= 5 else -wd)
+
+
+def archivar(csv_path, d):
+    """Añade (o completa) el día en el CSV maestro. Devuelve 'añadido', 'completado' o None si ya estaba."""
+    import csv, os
+    F = d['fecha']
+    rows = []
+    if os.path.exists(csv_path):
+        with open(csv_path, encoding='utf-8-sig', newline='') as f:
+            rows = list(csv.DictReader(f, delimiter=';'))
+    y = F.year if F >= inicio_temporada(F.year) else F.year - 1
+    z, e = d['zonas'], d['exp']
+    nueva = dict.fromkeys(COLS, '')
+    nueva.update(TEMPORADA=(y + 1) % 100, SEMANA=(F - inicio_temporada(y)).days // 7 + 1,
+                 DIA=DIA_LIBRA[F.weekday()], FECHA=F.strftime('%d/%m/%Y'),
+                 TAREAS=d['tareas'], LINEAS=d['lineas'], LINEAS_CD=d['cd'],
+                 SEUR_ESP=e['SEUR'][0], SEUR_POR=e['SEUR'][1], DHL_ESP=e['DHL'][0], DHL_POR=e['DHL'][1],
+                 FUENTE='Correo LIBRA')
+    for k in (1, 2, 3, 4, 7):
+        nueva[f'Z{k}_TAREAS'], nueva[f'Z{k}_LINEAS'] = z[k]
+    accion = 'añadido'
+    for r in rows:
+        if r['FECHA'] == nueva['FECHA']:
+            if r.get('Z1_LINEAS'):
+                return None
+            for c in COLS:                      # completar la fila existente (zonas/expediciones)
+                if not r.get(c) and nueva[c] != '':
+                    r[c] = nueva[c]
+            r['FUENTE'] = (r.get('FUENTE') or '') + ' + correo LIBRA'
+            accion = 'completado'
+            break
+    else:
+        rows.append(nueva)
+    rows.sort(key=lambda r: dt.datetime.strptime(r['FECHA'], '%d/%m/%Y'))
+    os.makedirs(os.path.dirname(csv_path) or '.', exist_ok=True)
+    with open(csv_path, 'w', encoding='utf-8-sig', newline='') as f:
+        w = csv.DictWriter(f, COLS, delimiter=';', extrasaction='ignore')
+        w.writeheader()
+        w.writerows(rows)
+    return accion
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('correo')
     ap.add_argument('--html', default='index.html')
+    ap.add_argument('--csv', default='datos/historico_libra.csv', help='archivo maestro con todo el histórico')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
     d = parse_correo(open(a.correo, encoding='utf-8').read())
     html = open(a.html, encoding='utf-8').read()
     r = actualizar(html, d)
+    arch = None if a.dry_run else archivar(a.csv, d)
     if r is None:
+        if arch:
+            print(f'SOLO_ARCHIVO {d["fecha"].strftime("%d/%m/%Y")}: ya estaba en el dashboard; {arch} en {a.csv}')
+            return
         print(f'YA_CARGADO {d["fecha"].strftime("%d/%m/%Y")}: no se ha modificado nada')
         sys.exit(3)
     new, resumen = r
     if not a.dry_run:
         open(a.html, 'w', encoding='utf-8').write(new)
+    resumen['archivo'] = arch or 'ya estaba'
     print('OK ' + json.dumps(resumen, ensure_ascii=False))
 
 
