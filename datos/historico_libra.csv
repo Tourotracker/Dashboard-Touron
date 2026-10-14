@@ -1700,7 +1700,7 @@
 26;2;4J;09/10/2025;168;360;0;96;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
 26;2;5V;10/10/2025;102;301;0;35;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
 26;3;1L;13/10/2025;152;454;0;135;29;90;26;69;33;81;28;75;1;4;1;2;35;135;23;7;24;3;Excel Seguimiento_tareas_y_expediciones + correo LIBRA;Corregido con correo LIBRA (Excel: 153 tareas / 456 líneas / 135 C.D.)
-26;3;2M;14/10/2025;185;462;0;132;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
+26;3;2M;14/10/2025;185;462;0;132;36;106;28;55;39;73;40;94;1;2;1;1;41;132;25;12;35;5;Excel Seguimiento_tareas_y_expediciones + correo LIBRA;
 26;3;3X;15/10/2025;145;323;0;11;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
 26;3;4J;16/10/2025;159;438;0;59;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
 26;3;5V;17/10/2025;137;314;0;0;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
@@ -1960,3 +1960,4 @@
 27;2;4J;08/10/2026;137;351;0;16;;;;;;;;;;;;;;;;;;;Excel Seguimiento_tareas_y_expediciones;
 27;2;5V;09/10/2026;127;263;0;50;26;93;23;37;24;45;21;38;;;;;33;50;20;4;29;5;Excel + correo LIBRA;
 27;3;2M;13/10/2026;214;475;;102;38;112;48;79;36;68;42;98;5;16;5;8;45;102;27;14;28;9;Correo LIBRA;
+27;3;3X;14/10/2026;175;437;;10;44;118;34;84;43;107;41;102;5;16;5;8;8;10;28;7;23;4;Correo LIBRA;
