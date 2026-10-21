@@ -20,7 +20,7 @@ la temporada (octubre-septiembre), comparativas con el año anterior, medias y g
 """
 import argparse, datetime as dt, json, math, re, sys
 
-ZONAS = (1, 2, 3, 4, 5, 7)
+ZONAS = (1, 2, 3, 4, 5, 6, 7)  # 6 = ZONA PORTUGAL
 DIA_C = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 DIA_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 MES_C = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
@@ -58,7 +58,7 @@ def parse_correo(txt):
         raise ValueError('No encuentro la fila TOTAL: tareas líneas')
     tot_t, tot_l = num(m.group(1)), num(m.group(2))
     zonas = {}
-    for m in re.finditer(r'^\s*(\d+)\s+ZONA DE TRABAJO\s+\d+\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M):
+    for m in re.finditer(r'^\s*(\d+)\s+ZONA\s+(?:DE TRABAJO\s+\d+|PORTUGAL)\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M):
         zonas[int(m.group(1))] = (num(m.group(2)), num(m.group(3)))  # (tareas, líneas)
     if not zonas:
         raise ValueError('No encuentro filas de zonas')
@@ -124,7 +124,7 @@ def actualizar(html, d):
 # ───────────────────────────── archivo maestro CSV ──────────────────────────
 COLS = ['TEMPORADA', 'SEMANA', 'DIA', 'FECHA', 'TAREAS', 'LINEAS', 'LINEAS_ARMARIOS', 'LINEAS_CD',
         'Z1_TAREAS', 'Z1_LINEAS', 'Z2_TAREAS', 'Z2_LINEAS', 'Z3_TAREAS', 'Z3_LINEAS', 'Z4_TAREAS', 'Z4_LINEAS',
-        'Z5_TAREAS', 'Z5_LINEAS', 'Z5_EMB_TAREAS', 'Z5_EMB_LINEAS', 'Z7_TAREAS', 'Z7_LINEAS', 'SEUR_ESP', 'SEUR_POR', 'DHL_ESP', 'DHL_POR', 'FUENTE', 'NOTA']
+        'Z5_TAREAS', 'Z5_LINEAS', 'Z5_EMB_TAREAS', 'Z5_EMB_LINEAS', 'Z6_TAREAS', 'Z6_LINEAS', 'Z7_TAREAS', 'Z7_LINEAS', 'SEUR_ESP', 'SEUR_POR', 'DHL_ESP', 'DHL_POR', 'FUENTE', 'NOTA']
 DIA_LIBRA = ['1L', '2M', '3X', '4J', '5V', '6S', '7D']
 
 
