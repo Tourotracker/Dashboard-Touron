@@ -50,9 +50,12 @@ def parse_correo(txt):
     exp = {}
     for ag in ('SEUR', 'DHL'):
         m = re.search(rf'^\s*{ag}\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M)
-        if not m:
+        if m:
+            exp[ag] = (num(m.group(1)), num(m.group(2)))
+        elif re.search(rf'^\s*{ag}\s*$', txt, re.M):
+            exp[ag] = (0, 0)  # fila vacía (día sin actividad): se carga a 0
+        else:
             raise ValueError(f'No encuentro la fila de expediciones {ag}')
-        exp[ag] = (num(m.group(1)), num(m.group(2)))
     m = re.search(r'TOTAL:\s*([\d.]+)\s+([\d.]+)', txt)
     if not m:
         raise ValueError('No encuentro la fila TOTAL: tareas líneas')
@@ -60,8 +63,9 @@ def parse_correo(txt):
     zonas = {}
     for m in re.finditer(r'^\s*(\d+)\s+ZONA\s+(?:DE TRABAJO\s+\d+|PORTUGAL)\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M):
         zonas[int(m.group(1))] = (num(m.group(2)), num(m.group(3)))  # (tareas, líneas)
-    if not zonas:
+    if not zonas and (tot_t, tot_l) != (0, 0):
         raise ValueError('No encuentro filas de zonas')
+    # TOTAL 0 0 sin filas de zonas = día sin actividad (domingo, festivo): todo se carga a 0.
     # La zona 5 tiene dos partes: "5 EMBARCACIONES" y "5 ZONA DE TRABAJO 5" (productos de gran
     # tamaño). Sus líneas se suman en la zona 5, como hace el TOTAL de LIBRA; las tareas de la
     # zona 5 se cuentan una sola vez, porque así cuadra el TOTAL de tareas de LIBRA.
@@ -101,10 +105,15 @@ def actualizar(html, d):
         # El correo de LIBRA tiene prioridad sobre el Excel: se corrige el día ya cargado.
         hist[hist.index(previo)] = nuevo
     elif hist and F.isoformat() < hist[-1][0]:
-        raise RuntimeError(f'La fecha {F} es anterior al último día cargado ({hist[-1][0]})')
+        if d['lineas'] or d['tareas']:
+            raise RuntimeError(f'La fecha {F} es anterior al último día cargado ({hist[-1][0]})')
+        # Día sin actividad atrasado: se intercala a 0 (la página ignora los días con 0 líneas).
+        hist.append(nuevo)
+        hist.sort(key=lambda x: x[0])
     else:
         hist.append(nuevo)
-    if F.isoformat() == hist[-1][0]:
+    # Un día a 0 no sustituye el detalle de zonas/expediciones del último día con actividad.
+    if F.isoformat() == hist[-1][0] and d['lineas']:
         estado['ultimo'] = {
             'fecha': F.isoformat(),
             'zonas': {str(k): list(v) for k, v in sorted(d['zonas'].items())},
