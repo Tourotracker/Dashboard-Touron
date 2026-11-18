@@ -88,12 +88,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--ink);font-fami
 .zg-grid{display:grid;gap:10px;min-height:0}
 .zg-pick{grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);flex:2.1}
 .zg-cons{grid-template-columns:repeat(4,1fr);flex:1}
-.zt-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border-top:5px solid var(--zc,var(--ink4));padding:12px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:0;overflow:hidden;position:relative}
+.zt-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border-top:5px solid var(--zc,var(--ink4));padding:12px 12px;display:flex;flex-direction:column;justify-content:space-between;min-height:0;overflow:hidden;position:relative}
 .zt-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3)}
-.zt-num{font-size:5.2rem;font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--ink)}
-.zg-cons .zt-num{font-size:4.4rem}
-.zt-op{align-self:flex-start;max-width:100%;font-size:1.75rem;font-weight:800;letter-spacing:-.01em;color:#fff;background:var(--zc,var(--ink4));padding:5px 12px;border-radius:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.zt-op.long{font-size:1.35rem}
+.zt-num{font-size:clamp(40px,4.4vw,96px);font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.zg-cons .zt-num{font-size:clamp(36px,3.8vw,84px)}
+.zt-op{align-self:flex-start;max-width:100%;font-size:28px;font-weight:800;letter-spacing:-.01em;color:#fff;background:var(--zc,var(--ink4));padding:.2em .45em;border-radius:9px;white-space:nowrap;overflow:hidden}
 .zt-op.empty{background:transparent;color:var(--ink3);border:1px dashed var(--ink4)}
 .zt-chip{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--orange-lt);color:var(--orange)}
 .zw{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;display:flex;flex-direction:column;gap:12px;min-height:0;overflow:hidden}
@@ -758,7 +757,7 @@ new Chart(document.getElementById('cCD'),{
     const card=i=>{const o=ops[i],cons=i>=10,st=o==null?"":"--zc:"+ZCOL[o];
       const chip=(i===8&&k>="2026-11-23")?'<span class="zt-chip">Rota a diario</span>':'';
       return '<div class="zt-card" style="'+st+'">'+chip+'<div><div class="zt-lbl">'+(cons?"Consolidación":"Zona")+'</div><div class="zt-num">'+ZNUM[i]+'</div></div>'+
-        '<div class="zt-op'+(o==null?' empty':(ZOPS[o].length>8?' long':''))+'">'+(o==null?"Sin asignar":ZOPS[o])+'</div></div>';};
+        '<div class="zt-op'+(o==null?' empty':'')+'">'+(o==null?"Sin asignar":ZOPS[o])+'</div></div>';};
     let pick="",cons="";for(let i=0;i<10;i++)pick+=card(i);for(let i=10;i<14;i++)cons+=card(i);
     const by=ZOPS.map(()=>[]);ops.forEach((o,i)=>{if(o!=null)by[o].push(i<10?"Zona "+ZNUM[i]:"Consolidación "+ZNUM[i]);});
     const order=ZOPS.map((n,i)=>i).sort((a,b)=>{const fa=ops.indexOf(a),fb=ops.indexOf(b);return(fa<0?99:fa)-(fb<0?99:fb);});
@@ -766,9 +765,20 @@ new Chart(document.getElementById('cCD'),{
     body.innerHTML='<div class="zg-left"><div class="zg-sec">Picking</div><div class="zg-grid zg-pick">'+pick+'</div><div class="zg-sec">Consolidación</div><div class="zg-grid zg-cons">'+cons+'</div></div>'+
       '<div class="zw"><div class="card-title">Dónde está cada uno</div>'+who+'</div>';
   }
-  render();
+  // Ajusta el tamaño de los nombres para que todos quepan completos (mismo tamaño en todas las tarjetas)
+  function fitNames(){
+    const els=[...document.querySelectorAll('#s4 .zt-op:not(.empty)')];
+    if(!els.length)return;
+    const card=els[0].parentElement, cw=card.clientWidth;
+    let s=Math.min(40,Math.round(cw*0.17));
+    const fits=()=>els.every(e=>e.scrollWidth<=e.clientWidth+1 && e.offsetWidth<=e.parentElement.clientWidth);
+    for(;s>=12;s--){els.forEach(e=>e.style.fontSize=s+'px');if(fits())break;}
+  }
+  render();fitNames();
+  window.addEventListener('resize',fitNames);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitNames);
   let last=iso(new Date());
-  setInterval(()=>{const n=iso(new Date());if(n!==last){last=n;render();}},60000);
+  setInterval(()=>{const n=iso(new Date());if(n!==last){last=n;render();fitNames();}},60000);
 })();
 
 // ── ROTATION ──────────────────────────────────────────────────────────────
