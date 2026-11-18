@@ -81,6 +81,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--ink);font-fami
 .zbar{display:inline-block;height:5px;border-radius:3px;vertical-align:middle;margin-left:8px;opacity:.7}
 
 /* SCREEN 4 — ORGANIZACIÓN DE ZONAS */
+#s4{inset:auto;left:0;top:0;width:1366px;height:768px;transform-origin:0 0} /* se dibuja a 1366x768 y se escala a la pantalla */
 .zg-wrap{flex:1;display:grid;grid-template-columns:1fr 340px;gap:12px;min-height:0}
 .zg-left{display:flex;flex-direction:column;gap:10px;min-height:0}
 .zg-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);display:flex;align-items:center;gap:10px}
@@ -90,8 +91,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--ink);font-fami
 .zg-cons{grid-template-columns:repeat(4,1fr);flex:1}
 .zt-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border-top:5px solid var(--zc,var(--ink4));padding:12px 12px;display:flex;flex-direction:column;justify-content:space-between;min-height:0;overflow:hidden;position:relative}
 .zt-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3)}
-.zt-num{font-size:clamp(40px,4.4vw,96px);font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--ink)}
-.zg-cons .zt-num{font-size:clamp(36px,3.8vw,84px)}
+.zt-num{font-size:60px;font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.zg-cons .zt-num{font-size:52px}
 .zt-op{align-self:flex-start;max-width:100%;font-size:28px;font-weight:800;letter-spacing:-.01em;color:#fff;background:var(--zc,var(--ink4));padding:.2em .45em;border-radius:9px;white-space:nowrap;overflow:hidden}
 .zt-op.empty{background:transparent;color:var(--ink3);border:1px dashed var(--ink4)}
 .zt-chip{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--orange-lt);color:var(--orange)}
@@ -774,8 +775,10 @@ new Chart(document.getElementById('cCD'),{
     const fits=()=>els.every(e=>e.scrollWidth<=e.clientWidth+1 && e.offsetWidth<=e.parentElement.clientWidth);
     for(;s>=12;s--){els.forEach(e=>e.style.fontSize=s+'px');if(fits())break;}
   }
-  render();fitNames();
-  window.addEventListener('resize',fitNames);
+  function scaleS4(){const el=document.getElementById('s4'),k=Math.min(innerWidth/1366,innerHeight/768);
+    el.style.transform='translate('+((innerWidth-1366*k)/2)+'px,'+((innerHeight-768*k)/2)+'px) scale('+k+')';}
+  render();fitNames();scaleS4();
+  window.addEventListener('resize',()=>{scaleS4();fitNames();});
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitNames);
   let last=iso(new Date());
   setInterval(()=>{const n=iso(new Date());if(n!==last){last=n;render();fitNames();}},60000);
