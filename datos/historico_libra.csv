@@ -1985,3 +1985,11 @@
 27;7;2M;10/11/2026;246;597;;8;59;191;63;124;68;133;50;141;0;0;0;0;0;0;6;8;28;11;38;6;Correo LIBRA;
 27;7;3X;11/11/2026;251;781;;212;47;143;35;117;35;136;39;159;7;14;7;7;0;0;88;212;24;9;51;6;Correo LIBRA;
 27;7;4J;12/11/2026;191;486;;71;42;116;34;66;36;79;40;120;9;34;9;17;0;0;30;71;31;9;33;2;Correo LIBRA;
+27;7;5V;13/11/2026;133;271;;12;32;71;31;64;31;66;31;56;1;2;1;1;0;0;7;12;14;6;28;3;Clonado;"Día casi sin datos por cambio de sistema (1 línea real): picking clonado del 06/11; expediciones reales del correo"
+27;8;1L;16/11/2026;192;603;;37;50;135;40;114;38;137;44;180;0;0;0;0;0;0;20;37;23;6;34;1;Clonado;"Sin datos por cambio de sistema: picking clonado del 26/10; expediciones reales del correo"
+27;8;2M;17/11/2026;246;597;;8;59;191;63;124;68;133;50;141;0;0;0;0;0;0;6;8;21;10;34;2;Clonado;"Sin datos por cambio de sistema: picking clonado del 10/11/2026; expediciones reales del correo"
+27;8;3X;18/11/2026;251;781;;212;47;143;35;117;35;136;39;159;7;14;7;7;0;0;88;212;18;7;27;4;Clonado;"Sin datos por cambio de sistema: picking clonado del 11/11/2026; expediciones reales del correo"
+27;8;4J;19/11/2026;191;486;;71;42;116;34;66;36;79;40;120;9;34;9;17;0;0;30;71;20;5;17;2;Clonado;"Sin datos por cambio de sistema: picking clonado del 12/11/2026; expediciones reales del correo"
+27;8;5V;20/11/2026;191;486;;71;42;116;34;66;36;79;40;120;9;34;9;17;0;0;30;71;25;9;28;4;Clonado;"Sin datos por cambio de sistema: picking clonado del 19/11 (que a su vez es del 12/11); expediciones reales del correo"
+27;9;1L;23/11/2026;192;603;;37;50;135;40;114;38;137;44;180;0;0;0;0;0;0;20;37;25;8;43;4;Clonado;"Sin datos por cambio de sistema: picking clonado del 26/10; expediciones reales del correo"
+27;9;2M;24/11/2026;167;351;;103;34;82;32;55;29;48;28;53;0;0;0;0;0;0;39;103;22;8;31;0;Correo LIBRA;Subzonas agrupadas (1.1+1.2, 2.1+2.2, 3.1+3.2+4.3, 6.1+6.2, 7.0). Incluye 8.1: 5 tareas / 10 líneas solo en el total
