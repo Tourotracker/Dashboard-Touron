@@ -20,7 +20,9 @@ la temporada (octubre-septiembre), comparativas con el año anterior, medias y g
 """
 import argparse, datetime as dt, json, math, re, sys
 
-ZONAS = (1, 2, 3, 4, 5, 6, 7)  # 6 = ZONA PORTUGAL
+ZONAS = (1, 2, 3, 4, 5, 6, 7)  # 6 = ZONA PORTUGAL (formato antiguo); 8 = subzona 8.1 (solo en el total)
+SUBZONAS = {'1.1': 1, '1.2': 1, '2.1': 2, '2.2': 2, '3.1': 3, '3.2': 3, '4.3': 3,
+            '6.1': 4, '6.2': 4, '7.0': 7, '8.1': 8}
 DIA_C = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 DIA_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 MES_C = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
@@ -49,9 +51,9 @@ def parse_correo(txt):
     fecha = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
     exp = {}
     for ag in ('SEUR', 'DHL'):
-        m = re.search(rf'^\s*{ag}\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M)
-        if m:
-            exp[ag] = (num(m.group(1)), num(m.group(2)))
+        m = re.search(rf'^\s*{ag}\s+([\d.]+)(?:\s+([\d.]+))?\s*$', txt, re.M)
+        if m:  # la columna de Portugal puede venir vacía (se carga a 0)
+            exp[ag] = (num(m.group(1)), num(m.group(2)) if m.group(2) else 0)
         elif re.search(rf'^\s*{ag}\s*$', txt, re.M):
             exp[ag] = (0, 0)  # fila vacía (día sin actividad): se carga a 0
         else:
@@ -63,6 +65,17 @@ def parse_correo(txt):
     zonas = {}
     for m in re.finditer(r'^\s*(\d+)\s+ZONA\s+(?:DE TRABAJO\s+\d+|PORTUGAL)\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M):
         zonas[int(m.group(1))] = (num(m.group(2)), num(m.group(3)))  # (tareas, líneas)
+    # Formato con subzonas (desde el 24/11/2026): "1.1 ZONA DE TRABAJO 1.1 20 53".
+    # Se agrupan como indicó Ignacio: 1.1+1.2 -> Z1, 2.1+2.2 -> Z2, 3.1+3.2+4.3 -> Z3,
+    # 6.1+6.2 -> Z4, 7.0 -> Z7 (C.D.). La 8.1 va a la clave 8: cuenta en el TOTAL del día
+    # pero no tiene fila en la tabla de zonas (de momento no se le hace caso).
+    for m in re.finditer(r'^\s*(\d)\.(\d)\s+ZONA DE TRABAJO\s+\d\.\d\s+([\d.]+)\s+([\d.]+)\s*$', txt, re.M):
+        sub = f'{m.group(1)}.{m.group(2)}'
+        if sub not in SUBZONAS:
+            raise ValueError(f'Subzona nueva {sub}: falta instrucción de a qué zona se agrupa')
+        z = SUBZONAS[sub]
+        t0, l0 = zonas.get(z, (0, 0))
+        zonas[z] = (t0 + num(m.group(3)), l0 + num(m.group(4)))
     if not zonas and (tot_t, tot_l) != (0, 0):
         raise ValueError('No encuentro filas de zonas')
     # TOTAL 0 0 sin filas de zonas = día sin actividad (domingo, festivo): todo se carga a 0.
@@ -77,7 +90,7 @@ def parse_correo(txt):
         zonas[5] = (max(t5, emb[0]), l5 + emb[1])
     if sum(z[1] for z in zonas.values()) != tot_l or sum(z[0] for z in zonas.values()) != tot_t:
         raise ValueError(f'La suma de zonas no cuadra con el TOTAL ({tot_t} tareas / {tot_l} líneas): {zonas}')
-    extra = set(zonas) - set(ZONAS)
+    extra = set(zonas) - set(ZONAS) - {8}
     if extra:
         raise ValueError(f'Aparecen zonas nuevas {sorted(extra)}: el dashboard solo tiene {ZONAS}')
     for z in ZONAS:
